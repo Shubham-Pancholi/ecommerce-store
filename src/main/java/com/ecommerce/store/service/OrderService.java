@@ -31,9 +31,9 @@ public class OrderService {
     private final ProductRepository productRepository;
 
     @Transactional 
-    public OrderResponse createOrder(CreateOrderRequest request) {
-        User user = userRepository.findById(request.userId())
-                                  .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.userId()));
+    public OrderResponse createOrder(Long userId, CreateOrderRequest request) {
+        User user = userRepository.findById(userId)
+                                  .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         
         Order order = Order.builder()
                            .user(user)

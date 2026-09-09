@@ -47,8 +47,12 @@ public class OrderIntegrationTest {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private com.ecommerce.store.service.JwtService jwtService;
+
     private User testUser;
     private Product testProduct;
+    private String authToken;
 
     @BeforeEach
     void setUp() {
@@ -73,6 +77,8 @@ public class OrderIntegrationTest {
                 .stockQuantity(10)
                 .status("ACTIVE")
                 .build());
+
+        authToken = jwtService.generateToken(testUser.getEmail(), testUser.getRole());
     }
 
     @Test
@@ -80,7 +86,6 @@ public class OrderIntegrationTest {
     void shouldCreateOrderAndDeductStock() throws Exception {
         String requestJson = """
             {
-                "userId": %d,
                 "items": [
                     {
                         "productId": %d,
@@ -88,9 +93,10 @@ public class OrderIntegrationTest {
                     }
                 ]
             }
-        """.formatted(testUser.getId(), testProduct.getId());
+        """.formatted(testProduct.getId());
 
         mockMvc.perform(post("/api/v1/orders")
+                .header("Authorization", "Bearer " + authToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson))
                 .andExpect(status().isCreated())
@@ -108,7 +114,6 @@ public class OrderIntegrationTest {
     void shouldFailWhenInsufficientStock() throws Exception {
         String requestJson = """
             {
-                "userId": %d,
                 "items": [
                     {
                         "productId": %d,
@@ -116,9 +121,10 @@ public class OrderIntegrationTest {
                     }
                 ]
             }
-        """.formatted(testUser.getId(), testProduct.getId());
+        """.formatted(testProduct.getId());
 
         mockMvc.perform(post("/api/v1/orders")
+                .header("Authorization", "Bearer " + authToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestJson))
                 .andExpect(status().isBadRequest());
