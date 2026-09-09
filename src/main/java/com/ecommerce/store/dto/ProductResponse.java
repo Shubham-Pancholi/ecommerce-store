@@ -14,7 +14,7 @@ public record ProductResponse(
     Integer stockQuantity,
     String status,
     Instant createdAt
-) {
+) implements java.io.Serializable {
     public static ProductResponse fromEntity(Product product) {
         return new ProductResponse(
             product.getId(),
