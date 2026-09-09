@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -48,6 +49,11 @@ public class Product {
     @Column (nullable = false, length = 30)
     @Builder.Default
     private String status = "ACTIVE";
+
+    @Version
+    @Column (nullable = false)
+    @Builder.Default
+    private Integer version = 0;
 
     @Column (name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

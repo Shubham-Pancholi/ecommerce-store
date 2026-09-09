@@ -3,6 +3,10 @@ package com.ecommerce.store.service;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import org.springframework.cache.CacheManager;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,8 +33,14 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final CacheManager cacheManager;
 
     @Transactional 
+    @Retryable (
+        retryFor = ObjectOptimisticLockingFailureException.class,
+        maxAttempts = 3,
+        backoff = @Backoff (delay = 100)
+    )
     public OrderResponse createOrder(Long userId, CreateOrderRequest request) {
         User user = userRepository.findById(userId)
                                   .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -53,6 +63,10 @@ public class OrderService {
             }
 
             product.setStockQuantity(product.getStockQuantity() - itemRequest.quantity());
+
+            if (cacheManager.getCache("product") != null) {
+                cacheManager.getCache("product").evict(product.getId());
+            }
 
             OrderItem orderItem = OrderItem.builder()
                                            .product(product)

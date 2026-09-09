@@ -1,5 +1,6 @@
 package com.ecommerce.store.service;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class ProductService {
     
     private final ProductRepository productRepository;
 
+    @Cacheable (value = "product", key = "#id")
     public ProductResponse getProductById(Long id) {
         return productRepository.findById(id)
               .map(ProductResponse :: fromEntity)
