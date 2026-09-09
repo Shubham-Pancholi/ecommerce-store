@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -51,5 +52,15 @@ public class GlobalExceptionHandler {
         problemDetail.setProperty("invalidFields", invalidFields);
 
         return problemDetail;
+    }
+
+    @ExceptionHandler (BadCredentialsException.class)
+    public ProblemDetail handleBadCredentialsException(BadCredentialsException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
+
+        problem.setTitle("Authentication failed");
+        problem.setType(URI.create("https://api.ecommerce.com/errors/unauthorized"));
+        problem.setProperty("timestamp", Instant.now());
+        return problem;
     }
 }

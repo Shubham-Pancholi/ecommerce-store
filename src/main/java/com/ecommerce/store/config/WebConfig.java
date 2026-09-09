@@ -1,4 +1,4 @@
-package com.ecommerce.store.configuration;
+package com.ecommerce.store.config;
 
 import org.springframework.data.web.config.EnableSpringDataWebSupport;
 import org.springframework.data.web.config.EnableSpringDataWebSupport.PageSerializationMode;
