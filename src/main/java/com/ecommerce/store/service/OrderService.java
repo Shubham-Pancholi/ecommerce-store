@@ -2,7 +2,10 @@ package com.ecommerce.store.service;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.cache.CacheManager;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
@@ -34,6 +37,7 @@ public class OrderService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final CacheManager cacheManager;
+    private final RedissonClient redissonClient;
 
     @Transactional 
     @Retryable (
@@ -42,48 +46,67 @@ public class OrderService {
         backoff = @Backoff (delay = 100)
     )
     public OrderResponse createOrder(Long userId, CreateOrderRequest request) {
-        User user = userRepository.findById(userId)
-                                  .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-        
-        Order order = Order.builder()
-                           .user(user)
-                           .orderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
-                           .status(OrderStatus.PENDING)
-                           .totalAmount(BigDecimal.ZERO)
-                           .build();
+        RLock lock = redissonClient.getLock("order-lock:user" + userId);
+        boolean isLocked = false;
 
-        BigDecimal total = BigDecimal.ZERO;
+        try {
+            isLocked = lock.tryLock(0, 10, TimeUnit.SECONDS);
 
-        for (OrderItemRequest itemRequest : request.items()) {
-            Product product = productRepository.findById(itemRequest.productId())
-                                               .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemRequest.productId()));
-
-            if (product.getStockQuantity() < itemRequest.quantity()) {
-                throw new IllegalArgumentException("Insufficient stock for product: " + product.getName() + ". Available: " + product.getStockQuantity() + ", Requested: " + itemRequest.quantity());
+            if (!isLocked) {
+                throw new IllegalStateException("Please wait, your previous order is still processing.");
             }
 
-            product.setStockQuantity(product.getStockQuantity() - itemRequest.quantity());
+            User user = userRepository.findById(userId)
+                                      .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+            
+            Order order = Order.builder()
+                            .user(user)
+                            .orderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
+                            .status(OrderStatus.PENDING)
+                            .totalAmount(BigDecimal.ZERO)
+                            .build();
 
-            if (cacheManager.getCache("product") != null) {
-                cacheManager.getCache("product").evict(product.getId());
+            BigDecimal total = BigDecimal.ZERO;
+
+            for (OrderItemRequest itemRequest : request.items()) {
+                Product product = productRepository.findById(itemRequest.productId())
+                                                   .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemRequest.productId()));
+
+                if (product.getStockQuantity() < itemRequest.quantity()) {
+                    throw new IllegalArgumentException("Insufficient stock for product: " + product.getName() + ". Available: " + product.getStockQuantity() + ", Requested: " + itemRequest.quantity());
+                }
+
+                product.setStockQuantity(product.getStockQuantity() - itemRequest.quantity());
+
+                if (cacheManager.getCache("product") != null) {
+                    cacheManager.getCache("product").evict(product.getId());
+                }
+
+                OrderItem orderItem = OrderItem.builder()
+                                               .product(product)
+                                               .quantity(itemRequest.quantity())
+                                               .pricePerUnit(product.getPrice())
+                                               .build();
+
+                order.addItem(orderItem);
+
+                BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.quantity()));
+                total = total.add(itemTotal);
             }
+            order.setTotalAmount(total);
 
-            OrderItem orderItem = OrderItem.builder()
-                                           .product(product)
-                                           .quantity(itemRequest.quantity())
-                                           .pricePerUnit(product.getPrice())
-                                           .build();
+            Order savedOrder = orderRepository.save(order);
 
-            order.addItem(orderItem);
+            return OrderResponse.fromEntity(savedOrder);
 
-            BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.quantity()));
-            total = total.add(itemTotal);
+        }   catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Order Processing was interrupted");
+        }   finally {
+            if (isLocked && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
-        order.setTotalAmount(total);
-
-        Order savedOrder = orderRepository.save(order);
-
-        return OrderResponse.fromEntity(savedOrder);
     }
 
     public OrderResponse getOrderById(Long id) {
