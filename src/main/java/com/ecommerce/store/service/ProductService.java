@@ -1,5 +1,7 @@
 package com.ecommerce.store.service;
 
+import java.math.BigDecimal;
+
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,5 +52,12 @@ public class ProductService {
 
         Product savedProduct = productRepository.save(product);
         return ProductResponse.fromEntity(savedProduct);
+    }
+
+    public Page<ProductResponse> searchProducts(String keyword, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
+        String safeKeyword = (keyword != null) ? keyword : "";
+
+        return productRepository.searchProducts(safeKeyword, minPrice, maxPrice, pageable)
+                                .map(ProductResponse :: fromEntity);
     }
 }

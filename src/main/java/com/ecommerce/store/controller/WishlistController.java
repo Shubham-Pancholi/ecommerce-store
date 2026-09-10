@@ -36,7 +36,7 @@ public class WishlistController {
         @PathVariable Long productId
     ) {
         UserWishlist userWishlist = wishlistService.addProductToUserWishlist(currentUser.getId(), productId);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(userWishlist);
+        return ResponseEntity.status(HttpStatus.OK).body(userWishlist);
     }
 
     @DeleteMapping ("/products/{productId}")
@@ -45,6 +45,6 @@ public class WishlistController {
         @PathVariable Long productId
     ) {
         UserWishlist userWishlist = wishlistService.removeProductFromUserWishlist(currentUser.getId(), productId);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(userWishlist);
+        return ResponseEntity.status(HttpStatus.OK).body(userWishlist);
     }
 }
