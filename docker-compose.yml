@@ -23,6 +23,12 @@ services:
     container_name: ecommerce-mongo
     ports:
       - "27017:27017"
+  
+  kafka:
+    image: confluentinc/confluent-local:7.6.1
+    container_name: ecommerce_kafka
+    ports:
+      - "9092:9092"
 
 volumes:
   postgres_data:

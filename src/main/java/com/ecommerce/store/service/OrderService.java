@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.cache.CacheManager;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -38,6 +39,7 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final CacheManager cacheManager;
     private final RedissonClient redissonClient;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Transactional 
     @Retryable (
@@ -96,6 +98,9 @@ public class OrderService {
             order.setTotalAmount(total);
 
             Order savedOrder = orderRepository.save(order);
+
+            String message = "Order " + savedOrder.getOrderNumber() + " was just placed by User ID: " + userId;
+            kafkaTemplate.send("order-notifications", message);
 
             return OrderResponse.fromEntity(savedOrder);
 
