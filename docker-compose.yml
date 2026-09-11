@@ -18,5 +18,11 @@ services:
       - "6379:6379"
     restart: unless-stopped
 
+  mongodb:
+    image: mongo:7.0
+    container_name: ecommerce-mongo
+    ports:
+      - "27017:27017"
+
 volumes:
   postgres_data:
