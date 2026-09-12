@@ -1,0 +1,8 @@
+-- 6. Outbox message table
+CREATE TABLE outbox_messages (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    topic VARCHAR(100) NOT NULL,
+    payload TEXT NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

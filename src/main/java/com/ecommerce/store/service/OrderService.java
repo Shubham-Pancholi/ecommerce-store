@@ -9,7 +9,6 @@ import org.redisson.api.RedissonClient;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -22,11 +21,13 @@ import com.ecommerce.store.dto.OrderResponse;
 import com.ecommerce.store.entity.Order;
 import com.ecommerce.store.entity.OrderItem;
 import com.ecommerce.store.entity.OrderStatus;
+import com.ecommerce.store.entity.OutboxMessage;
 import com.ecommerce.store.entity.Product;
 import com.ecommerce.store.entity.User;
 import com.ecommerce.store.exception.ResourceNotFoundException;
 import com.ecommerce.store.mapper.OrderMapper;
 import com.ecommerce.store.repository.OrderRepository;
+import com.ecommerce.store.repository.OutboxMessageRepository;
 import com.ecommerce.store.repository.ProductRepository;
 import com.ecommerce.store.repository.UserRepository;
 
@@ -42,8 +43,8 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final CacheManager cacheManager;
     private final RedissonClient redissonClient;
-    private final KafkaTemplate<String, String> kafkaTemplate;
     private final OrderMapper orderMapper;
+    private final OutboxMessageRepository outboxMessageRepository;
 
     @Transactional 
     @Retryable (
@@ -104,7 +105,13 @@ public class OrderService {
             Order savedOrder = orderRepository.save(order);
 
             String message = "Order " + savedOrder.getOrderNumber() + " was just placed by User ID: " + userId;
-            kafkaTemplate.send("order-notifications", message);
+            //kafkaTemplate.send("order-notifications", message);
+            OutboxMessage outboxMessage = OutboxMessage.builder()
+                                                       .topic("order-notifications")
+                                                       .payload(message)
+                                                       .build();
+
+            outboxMessageRepository.save(outboxMessage);
 
             return orderMapper.tOrderResponse(savedOrder);
 
