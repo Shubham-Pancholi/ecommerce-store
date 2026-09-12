@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.cache.CacheManager;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
@@ -120,5 +122,15 @@ public class OrderService {
         return orderRepository.findById(id)
                               .map(orderMapper :: tOrderResponse)
                               .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
+    }
+
+    public Page<OrderResponse> getOrderByUserId(Long userId, Pageable pageable) {
+        return orderRepository.findByUserId(userId, pageable)
+                              .map(orderMapper :: tOrderResponse);
+    }
+
+    public Page<OrderResponse> findAllOrders(Pageable pageable) {
+        return orderRepository.findAll(pageable)
+                              .map(orderMapper :: tOrderResponse);
     }
 }

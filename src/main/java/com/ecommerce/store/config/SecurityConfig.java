@@ -36,6 +36,7 @@ public class SecurityConfig {
                                                .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                                                .requestMatchers(HttpMethod.POST, "/api/v1/products/*/reviews").authenticated()
                                                .requestMatchers(HttpMethod.POST, "/api/v1/products/**").hasAuthority("ROLE_ADMIN")
+                                               .requestMatchers(HttpMethod.GET, "/api/v1/orders").hasAuthority("ROLE_ADMIN")
                                                .requestMatchers("/error").permitAll()
                                                .anyRequest().authenticated())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

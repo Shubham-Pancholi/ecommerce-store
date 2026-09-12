@@ -46,10 +46,10 @@ public class ProductController {
     }
 
     @GetMapping 
-    public ResponseEntity<Page<ProductResponse>> getAllProducts(
+    public ResponseEntity<PageResponse<ProductResponse>> getAllProducts(
         @PageableDefault (page = 0, size = 10, sort = "id") Pageable pageable
     ) {
-        return ResponseEntity.ok(productService.getAllProducts(pageable));
+        return ResponseEntity.ok(PageResponse.of(productService.getAllProducts(pageable)));
     }
 
     @GetMapping ("/search")
