@@ -12,6 +12,7 @@ import com.ecommerce.store.dto.CreateProductRequest;
 import com.ecommerce.store.dto.ProductResponse;
 import com.ecommerce.store.entity.Product;
 import com.ecommerce.store.exception.ResourceNotFoundException;
+import com.ecommerce.store.mapper.ProductMapper;
 import com.ecommerce.store.repository.ProductRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -22,17 +23,18 @@ import lombok.RequiredArgsConstructor;
 public class ProductService {
     
     private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
 
     @Cacheable (value = "product", key = "#id")
     public ProductResponse getProductById(Long id) {
         return productRepository.findById(id)
-              .map(ProductResponse :: fromEntity)
+              .map(productMapper :: toResponse)
               .orElseThrow(() -> new ResourceNotFoundException("Product not found with the id: +" + id) );
     }
 
     public Page<ProductResponse> getAllProducts(Pageable pageable) {
         return productRepository.findAll( pageable )
-              .map(ProductResponse :: fromEntity);
+              .map(productMapper :: toResponse);
     }
 
     @Transactional 
@@ -51,13 +53,13 @@ public class ProductService {
                                  .build();
 
         Product savedProduct = productRepository.save(product);
-        return ProductResponse.fromEntity(savedProduct);
+        return productMapper.toResponse(savedProduct);
     }
 
     public Page<ProductResponse> searchProducts(String keyword, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
         String safeKeyword = (keyword != null) ? keyword : "";
 
         return productRepository.searchProducts(safeKeyword, minPrice, maxPrice, pageable)
-                                .map(ProductResponse :: fromEntity);
+                                .map(productMapper :: toResponse);
     }
 }

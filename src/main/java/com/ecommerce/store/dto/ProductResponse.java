@@ -3,8 +3,6 @@ package com.ecommerce.store.dto;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import com.ecommerce.store.entity.Product;
-
 public record ProductResponse(
     Long id,
     String sku,
@@ -14,17 +12,4 @@ public record ProductResponse(
     Integer stockQuantity,
     String status,
     Instant createdAt
-) implements java.io.Serializable {
-    public static ProductResponse fromEntity(Product product) {
-        return new ProductResponse(
-            product.getId(),
-            product.getSku(),
-            product.getName(),
-            product.getDescription(),
-            product.getPrice(),
-            product.getStockQuantity(),
-            product.getStatus(),
-            product.getCreatedAt()
-        );
-    }
-}
+) implements java.io.Serializable {}

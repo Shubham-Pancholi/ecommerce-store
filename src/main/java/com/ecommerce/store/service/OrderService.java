@@ -23,6 +23,7 @@ import com.ecommerce.store.entity.OrderStatus;
 import com.ecommerce.store.entity.Product;
 import com.ecommerce.store.entity.User;
 import com.ecommerce.store.exception.ResourceNotFoundException;
+import com.ecommerce.store.mapper.OrderMapper;
 import com.ecommerce.store.repository.OrderRepository;
 import com.ecommerce.store.repository.ProductRepository;
 import com.ecommerce.store.repository.UserRepository;
@@ -40,6 +41,7 @@ public class OrderService {
     private final CacheManager cacheManager;
     private final RedissonClient redissonClient;
     private final KafkaTemplate<String, String> kafkaTemplate;
+    private final OrderMapper orderMapper;
 
     @Transactional 
     @Retryable (
@@ -102,7 +104,7 @@ public class OrderService {
             String message = "Order " + savedOrder.getOrderNumber() + " was just placed by User ID: " + userId;
             kafkaTemplate.send("order-notifications", message);
 
-            return OrderResponse.fromEntity(savedOrder);
+            return orderMapper.tOrderResponse(savedOrder);
 
         }   catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -116,7 +118,7 @@ public class OrderService {
 
     public OrderResponse getOrderById(Long id) {
         return orderRepository.findById(id)
-                              .map(OrderResponse :: fromEntity)
+                              .map(orderMapper :: tOrderResponse)
                               .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + id));
     }
 }

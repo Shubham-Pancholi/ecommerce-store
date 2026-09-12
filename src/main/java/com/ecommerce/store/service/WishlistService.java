@@ -8,6 +8,7 @@ import com.ecommerce.store.entity.Product;
 import com.ecommerce.store.entity.User;
 import com.ecommerce.store.entity.Wishlist;
 import com.ecommerce.store.exception.ResourceNotFoundException;
+import com.ecommerce.store.mapper.UserWishlistMapper;
 import com.ecommerce.store.repository.ProductRepository;
 import com.ecommerce.store.repository.UserRepository;
 import com.ecommerce.store.repository.WishlistRepository;
@@ -22,15 +23,14 @@ public class WishlistService {
     private final WishlistRepository wishlistRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final UserWishlistMapper userWishlistMapper;
 
     public UserWishlist getWishlistOfUser(Long userId) {
-        User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User not found with id: " + userId);
+        }
 
-        return UserWishlist.getUserWishlist(
-            user.getId(),
-            wishlistRepository.findByUserId(user.getId())
-        );
+        return userWishlistMapper.toUserWishlist(userId, wishlistRepository.findByUserId(userId));
     }
 
     @Transactional 
