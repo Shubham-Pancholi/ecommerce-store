@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -30,7 +31,7 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleIllegalArgumentException(IllegalArgumentException exception) {
         ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
 
-        problemDetail.setTitle("Resource Not Found");
+        problemDetail.setTitle("Bad Request");
         problemDetail.setType(URI.create("https://api.ecommerce.com/errors/not-found"));
         problemDetail.setProperty("timestamp", Instant.now());
 
@@ -60,6 +61,26 @@ public class GlobalExceptionHandler {
 
         problem.setTitle("Authentication failed");
         problem.setType(URI.create("https://api.ecommerce.com/errors/unauthorized"));
+        problem.setProperty("timestamp", Instant.now());
+        return problem;
+    }
+
+    @ExceptionHandler (ObjectOptimisticLockingFailureException.class)
+    public ProblemDetail handleOptimisticLockingFailure(ObjectOptimisticLockingFailureException exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "The resource was updated by another transaction. Please refresh and try again.");
+
+        problem.setTitle("Data Conflict");
+        problem.setType(URI.create("http://api.ecommerce.com/errors/conflict"));
+        problem.setProperty("timestamp", Instant.now());
+        return problem;
+    }
+
+    @ExceptionHandler (Exception.class)
+    public ProblemDetail handleGenericException(Exception exception) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "And Unexpected error has occured. Please contact support.");
+
+        problem.setTitle("Internal Server Error");
+        problem.setType(URI.create("http://api/ecommerce.com/error/internal-error"));
         problem.setProperty("timestamp", Instant.now());
         return problem;
     }
