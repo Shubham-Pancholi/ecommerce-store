@@ -17,6 +17,7 @@ public class NotificationService {
 
     private final ObjectProvider<MessageBuilder> messageBuilderProvider;
     private final ObjectMapper objectMapper;
+    private final SseService sseService;
 
     @KafkaListener (topics = "order-notifications", groupId = "ecommerce-notification-group")
     public void handleOrderNotification(String message) {
@@ -46,6 +47,11 @@ public class NotificationService {
             }   catch (Exception exception) {
                 System.err.println("Failed to reach Third-Party API: " + exception.getMessage());
             }
+
+            sseService.pushNotificationToUser(
+                event.userEmail(),
+                "Your Order, numbered, " +  event.orderNumber() + ", has been confirmed and processed."
+            );
 
         }   catch (Exception exception) {
             System.err.println("Failed to parse Kafka message: " + exception.getMessage());
