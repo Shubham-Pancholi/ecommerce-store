@@ -20,6 +20,7 @@ import com.ecommerce.store.dto.OrderItemRequest;
 import com.ecommerce.store.dto.OrderResponse;
 import com.ecommerce.store.entity.Order;
 import com.ecommerce.store.entity.OrderItem;
+import com.ecommerce.store.entity.OrderPlacedEvent;
 import com.ecommerce.store.entity.OrderStatus;
 import com.ecommerce.store.entity.OutboxMessage;
 import com.ecommerce.store.entity.Product;
@@ -30,8 +31,10 @@ import com.ecommerce.store.repository.OrderRepository;
 import com.ecommerce.store.repository.OutboxMessageRepository;
 import com.ecommerce.store.repository.ProductRepository;
 import com.ecommerce.store.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 
 @Service 
 @RequiredArgsConstructor 
@@ -45,6 +48,7 @@ public class OrderService {
     private final RedissonClient redissonClient;
     private final OrderMapper orderMapper;
     private final OutboxMessageRepository outboxMessageRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional 
     @Retryable (
@@ -52,6 +56,7 @@ public class OrderService {
         maxAttempts = 3,
         backoff = @Backoff (delay = 100)
     )
+    @SneakyThrows 
     public OrderResponse createOrder(Long userId, CreateOrderRequest request) {
         RLock lock = redissonClient.getLock("order-lock:user" + userId);
         boolean isLocked = false;
@@ -104,11 +109,18 @@ public class OrderService {
 
             Order savedOrder = orderRepository.save(order);
 
-            String message = "Order " + savedOrder.getOrderNumber() + " was just placed by User ID: " + userId;
-            //kafkaTemplate.send("order-notifications", message);
+            OrderPlacedEvent event = new OrderPlacedEvent(
+                savedOrder.getOrderNumber(),
+                user.getEmail(),
+                user.getFirstName(),
+                savedOrder.getTotalAmount().toString()
+            );
+
+            String jsonPayload = objectMapper.writeValueAsString(event);
+
             OutboxMessage outboxMessage = OutboxMessage.builder()
                                                        .topic("order-notifications")
-                                                       .payload(message)
+                                                       .payload(jsonPayload)
                                                        .build();
 
             outboxMessageRepository.save(outboxMessage);

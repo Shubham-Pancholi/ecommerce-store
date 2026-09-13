@@ -39,7 +39,7 @@ This document serves as the final, definitive blueprint for the project. It merg
 
 ### Phase 6: External APIs & Advanced Dependency Injection
 * **Focus:** Turning our mock Kafka consumer into a real Notification Engine.
-* **Consuming APIs:** Use `RestClient` to integrate the SendGrid API (emails) and WhatsApp Dev API (messaging).
+* **Consuming APIs:** Learn Spring's modern `RestClient` by integrating with dummy APIs (like JSONPlaceholder) to establish the architecture. (Real SendGrid/WhatsApp keys deferred to Phase 9).
 * **Advanced Scoping:** Solve the "Scoped Dependency" interview question by injecting a stateful `MessageBuilder` (Prototype Bean) into the `NotificationService` (Singleton Bean) using `@Lookup` or `ObjectProvider`.
 
 ### Phase 7: High Concurrency, Non-Blocking & Real-Time
@@ -54,6 +54,7 @@ This document serves as the final, definitive blueprint for the project. It merg
 
 ### Phase 9: Production "Go-Live" Polish
 * **Focus:** Finalizing the app for a theoretical public release.
+* **Real Integrations:** Swap the dummy APIs from Phase 6 with real SendGrid and WhatsApp Dev accounts.
 * **API Documentation:** Integrate Swagger/OpenAPI for a beautiful, interactive API playground.
 * **Payment Gateway:** Simulate a Stripe or Razorpay integration using external API calls and webhook callbacks.
 

@@ -1,26 +1,54 @@
 package com.ecommerce.store.service;
 
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.http.MediaType;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import com.ecommerce.store.entity.OrderPlacedEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
 
 @Service 
+@RequiredArgsConstructor 
 public class NotificationService {
-    
+
+    private final ObjectProvider<MessageBuilder> messageBuilderProvider;
+    private final ObjectMapper objectMapper;
+
     @KafkaListener (topics = "order-notifications", groupId = "ecommerce-notification-group")
     public void handleOrderNotification(String message) {
-        System.out.println("\n=======================================================");
-        System.out.println("KAFKA CONSUMER TRIGGERED!");
-        System.out.println("Processing background task...");
-        System.out.println("Message received: " + message);
-        System.out.println("Simulating 3-second email send...");
-        
         try {
-            Thread.sleep(3000); // Simulate a slow email API like SendGrid
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            OrderPlacedEvent event = objectMapper.readValue(message, OrderPlacedEvent.class);
+
+            MessageBuilder emailBuilder = messageBuilderProvider.getObject();
+
+            emailBuilder.to(event.userEmail())
+                        .subject("Order Confirmation: " + event.orderNumber())
+                        .buildOrderConfirmation(event.orderNumber());
+            
+            System.out.println("Ready to send mail to: " + emailBuilder.getRecipient());
+
+            RestClient restClient = RestClient.create();
+
+            try {
+                String response = restClient.post()
+                                            .uri("Https://jsonplaceholder.typicode.com/posts")
+                                            .contentType(MediaType.APPLICATION_JSON)
+                                            .body(emailBuilder)
+                                            .retrieve()
+                                            .body(String.class);
+
+            System.out.println("Third Party API response: \n" + response);
+
+            }   catch (Exception exception) {
+                System.err.println("Failed to reach Third-Party API: " + exception.getMessage());
+            }
+
+        }   catch (Exception exception) {
+            System.err.println("Failed to parse Kafka message: " + exception.getMessage());
         }
-        
-        System.out.println("Email sent successfully!");
-        System.out.println("=======================================================\n");
     }
 }
