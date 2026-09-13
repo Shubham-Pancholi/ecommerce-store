@@ -36,7 +36,7 @@ public class NotificationService {
 
             try {
                 String response = restClient.post()
-                                            .uri("Https://jsonplaceholder.typicode.com/posts")
+                                            .uri("https://jsonplaceholder.typicode.com/posts")
                                             .contentType(MediaType.APPLICATION_JSON)
                                             .body(emailBuilder)
                                             .retrieve()

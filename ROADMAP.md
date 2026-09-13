@@ -23,46 +23,50 @@ This document serves as the final, definitive blueprint for the project. It merg
 * **Achieved:** Connected simultaneously to Postgres (relational) and Mongo (document). Built a schema-less Product Review system.
 
 ### Phase 5: Asynchronous & Event-Driven Architecture
-* **Tech:** Apache Kafka, Docker Compose (confluent-local).
+* **Tech:** Apache Kafka, Docker Compose.
 * **Achieved:** Decoupled order processing. Order API acts as a Producer; a background Consumer intercepts the message.
+
+### Phase 6: Technical Debt & Advanced Concepts
+* **Achieved:** MapStruct, RFC 7807 ProblemDetails, Hibernate N+1 Fixes, Transactional Outbox Pattern, RestClient, Prototype Bean scoping (`ObjectProvider`), Server-Sent Events (SSE) for real-time updates.
+
+### Phase 7: Observability & Containerization
+* **Achieved:** Prometheus/Grafana integration, multi-stage Dockerfiles, complex `docker-compose.yml` networking (Postgres, Mongo, Redis, pure Apache Kafka).
 
 ---
 
 ## 🚧 ACTIVE DEVELOPMENT & UPCOMING PHASES
 
-### Phase 5.5: Technical Debt & Enterprise Refactoring
-*Before moving forward, we will polish the existing codebase to strictly adhere to enterprise standards.*
-* **MapStruct:** Replace manual DTO conversions with auto-generated mappers.
-* **Advanced Error Handling:** Implement RFC 7807 `ProblemDetail` for standardized API error responses.
-* **Hibernate Optimization:** Hunt down and fix N+1 query problems using `JOIN FETCH` and `@EntityGraph`.
-* **The Transactional Outbox Pattern:** Ensure our Postgres DB write and Kafka publish are atomically linked so messages are never lost if Kafka goes down mid-transaction.
+### Phase 8: Core E-Commerce Expansion & Refinement (Current)
+* **Focus:** Fleshing out the application to mimic a complete real-world e-commerce backend.
+* **Images:** Implement multipart file uploads and static file serving for product images.
+* **Categories & Inventory:** Add product categories and robust stock management.
+* **Shopping Cart:** Build a Redis-backed session cart to hold items before checkout.
+* **User Profiles:** Add shipping address management.
 
-### Phase 6: External APIs & Advanced Dependency Injection
-* **Focus:** Turning our mock Kafka consumer into a real Notification Engine.
-* **Consuming APIs:** Learn Spring's modern `RestClient` by integrating with dummy APIs (like JSONPlaceholder) to establish the architecture. (Real SendGrid/WhatsApp keys deferred to Phase 9).
-* **Advanced Scoping:** Solve the "Scoped Dependency" interview question by injecting a stateful `MessageBuilder` (Prototype Bean) into the `NotificationService` (Singleton Bean) using `@Lookup` or `ObjectProvider`.
+### Phase 9: Frontend Integration & LAN Deployment
+* **Focus:** Making the app visible and usable from a phone on the local Wi-Fi.
+* **CORS:** Configure Cross-Origin Resource Sharing.
+* **Barebones Frontend:** Create a simple, lightweight frontend (HTML/JS or basic React) to interact with the API, view product images, and place orders.
+* **LAN Routing:** Bind the Dockerized server to your local IPv4 network so you can test the mobile responsive UI directly from your phone.
 
-### Phase 7: High Concurrency, Non-Blocking & Real-Time
-* **Focus:** Handling massive scale and pushing real-time UI updates.
-* **Virtual Threads:** Enable Java 21 Project Loom to transform our blocking Tomcat server into a highly concurrent engine.
-* **WebSockets / SSE:** Instead of making the frontend poll for updates, the backend will proactively push an event (e.g., "Order Shipped") down to the client.
+### Phase 10: Payment Gateways & Webhooks
+* **Focus:** Asynchronous financial transactions.
+* **Integration:** Simulate a Stripe or Razorpay integration.
+* **Webhooks:** Expose public endpoints to safely receive and verify asynchronous payment confirmation webhooks from the gateway.
 
-### Phase 8: Production Observability & Distributed Tracing
-* **Focus:** Visualizing the health of the system.
-* **Metrics:** Hook up Spring Boot Actuator, Prometheus, and Grafana to visualize JVM RAM, HikariCP connection pools, and Kafka lag.
-* **Distributed Tracing:** Use Micrometer Tracing (Zipkin/Jaeger) to attach a unique `traceId` to a request. Watch that ID travel from the HTTP request, through Postgres, into Kafka, and out to the Email Consumer.
+### Phase 11: Cloud-Native Orchestration (Kubernetes)
+* **Focus:** Scaling beyond Docker Compose.
+* **Minikube:** Translate the `docker-compose.yml` into Kubernetes manifests (`Deployment`, `Service`, `ConfigMap`, `Secret`).
+* **Deployment:** Spin up the entire polyglot ecosystem inside a local K8s cluster.
 
-### Phase 9: Production "Go-Live" Polish
-* **Focus:** Finalizing the app for a theoretical public release.
-* **Real Integrations:** Swap the dummy APIs from Phase 6 with real SendGrid and WhatsApp Dev accounts.
-* **API Documentation:** Integrate Swagger/OpenAPI for a beautiful, interactive API playground.
-* **Payment Gateway:** Simulate a Stripe or Razorpay integration using external API calls and webhook callbacks.
+### Phase 12: Spring Cloud (Microservices Evolution)
+* **Focus:** Breaking the monolith.
+* **Architecture:** Introduce Spring Cloud Gateway, Eureka Service Discovery, and Spring Cloud Config to simulate a true distributed microservice environment.
 
-### Phase 10: Cloud-Native Containerization & Kubernetes
-* **Focus:** Infrastructure as Code and Orchestration.
-* **Dockerization:** Write multi-stage Dockerfiles for the Spring Boot application using Eclipse Temurin.
-* **Kubernetes (Minikube):** Write manifests (Deployments, Services, ConfigMaps, Secrets) to deploy the entire ecosystem (App, Postgres, Mongo, Redis, Kafka) into a local K8s cluster.
-
-### Phase 11: Modern Enhancements (Spring AI)
+### Phase 13: Modern Enhancements (Spring AI)
 * **Focus:** Generative AI Integration.
 * **AI Assistant:** Use Spring AI to build an intelligent shopping assistant or enable natural-language vector searches for the product catalog.
+
+### Phase 14: Production Integrations (Deferred/Non-Urgent)
+* **Focus:** Final public release polish.
+* **Communications:** Integrate real SendGrid and WhatsApp Developer API keys.
