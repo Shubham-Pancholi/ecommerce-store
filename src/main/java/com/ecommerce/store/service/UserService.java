@@ -23,7 +23,7 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                                   .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
 
-        String hashedPassword = passwordEncoder.encode(request.newPassword());
+        String hashedPassword = passwordEncoder.encode(request.password());
 
         user.setPasswordHash(hashedPassword);
 

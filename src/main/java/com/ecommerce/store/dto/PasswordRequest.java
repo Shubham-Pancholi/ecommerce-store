@@ -1,3 +1,10 @@
 package com.ecommerce.store.dto;
 
-public record PasswordRequest(String newPassword) {}
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
+public record PasswordRequest(
+    @NotBlank (message = "Password is required")
+    @Size (min = 6, message = "Password must contain at least 6 characters")
+    String password
+) {}

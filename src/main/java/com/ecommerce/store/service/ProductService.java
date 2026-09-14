@@ -12,9 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ecommerce.store.dto.CreateProductRequest;
 import com.ecommerce.store.dto.ProductResponse;
+import com.ecommerce.store.entity.Category;
 import com.ecommerce.store.entity.Product;
 import com.ecommerce.store.exception.ResourceNotFoundException;
 import com.ecommerce.store.mapper.ProductMapper;
+import com.ecommerce.store.repository.CategoryRepository;
 import com.ecommerce.store.repository.ProductRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
     private final CacheManager cacheManager;
+    private final CategoryRepository categoryRepository;
 
     @Cacheable (value = "product", key = "#id")
     public ProductResponse getProductById(Long id) {
@@ -46,6 +49,9 @@ public class ProductService {
             throw new IllegalArgumentException("Product with SKU '" + request.sku() + "' already exists");
         }
 
+        Category category = categoryRepository.findByName(request.category())
+                                              .orElseThrow(() -> new IllegalArgumentException("Category doesn't exist."));
+
         Product product = Product.builder()
                                  .sku(request.sku())
                                  .name(request.name())
@@ -54,6 +60,7 @@ public class ProductService {
                                  .stockQuantity(request.stockQuantity())
                                  .status("ACTIVE")
                                  .imageUrl(request.imageUrl())
+                                 .category(category)
                                  .build();
 
         Product savedProduct = productRepository.save(product);
@@ -77,6 +84,11 @@ public class ProductService {
         product.setPrice(request.price());
         product.setStockQuantity(request.stockQuantity());
         product.setImageUrl(request.imageUrl());
+
+        Category category = categoryRepository.findByName(request.category())
+                                              .orElseThrow(() -> new IllegalArgumentException("Category doesn't exist"));
+
+        product.setCategory(category);
 
         if (cacheManager.getCache("product") != null) {
             cacheManager.getCache("product").evict(id);
