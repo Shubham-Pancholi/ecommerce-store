@@ -11,5 +11,6 @@ public record ProductResponse(
     BigDecimal price,
     Integer stockQuantity,
     String status,
-    Instant createdAt
+    Instant createdAt,
+    String imageUrl
 ) implements java.io.Serializable {}

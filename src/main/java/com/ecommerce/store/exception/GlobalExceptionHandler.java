@@ -77,8 +77,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler (Exception.class)
     public ProblemDetail handleGenericException(Exception exception) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "And Unexpected error has occured. Please contact support.");
+        //ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "And Unexpected error has occured. Please contact support.");
 
+        exception.printStackTrace(); 
+        
+        // 2. Pass the real message to Postman so we can see it!
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+            HttpStatus.INTERNAL_SERVER_ERROR, 
+            "Error: " + exception.getMessage()
+        );
+    
         problem.setTitle("Internal Server Error");
         problem.setType(URI.create("http://api/ecommerce.com/error/internal-error"));
         problem.setProperty("timestamp", Instant.now());

@@ -32,13 +32,14 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer :: disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/auth/**").permitAll()
-                                               .requestMatchers("/actuator/**").permitAll()
+            .authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/auth/**", "/actuator/**", "/error").permitAll()
                                                .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                                                .requestMatchers(HttpMethod.POST, "/api/v1/products/*/reviews").authenticated()
-                                               .requestMatchers(HttpMethod.POST, "/api/v1/products/**").hasAuthority("ROLE_ADMIN")
+                                               .requestMatchers("/api/v1/products/**").hasAuthority("ROLE_ADMIN")
                                                .requestMatchers(HttpMethod.GET, "/api/v1/orders").hasAuthority("ROLE_ADMIN")
-                                               .requestMatchers("/error").permitAll()
+                                               .requestMatchers(HttpMethod.POST, "/api/v1/images/upload").hasAuthority("ROLE_ADMIN")
+                                               .requestMatchers("/api/v1/user/me").authenticated()
+                                               .requestMatchers("/api/v1/user/**").hasAuthority("ROLE_ADMIN")
                                                .anyRequest().authenticated())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

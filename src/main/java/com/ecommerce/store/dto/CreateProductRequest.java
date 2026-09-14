@@ -25,5 +25,9 @@ public record CreateProductRequest(
 
     @NotNull (message = "Stock quantity is required")
     @PositiveOrZero (message = "Stock quantity cannot be negative")
-    Integer stockQuantity
+    Integer stockQuantity,
+
+    @NotBlank (message = "Imange Url is required")
+    @Size (max = 512, message = "Url invalid; more than 512 chars")
+    String imageUrl
 ) {}

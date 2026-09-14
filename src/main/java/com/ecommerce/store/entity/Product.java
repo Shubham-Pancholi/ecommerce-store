@@ -58,6 +58,9 @@ public class Product {
     @Column (name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column (name = "image_url", length = 512)
+    private String imageUrl;
+
     @PrePersist 
     protected void onCreate() {
         if (this.createdAt == null) {
