@@ -67,10 +67,8 @@ public class ProductService {
         return productMapper.toResponse(savedProduct);
     }
 
-    public Page<ProductResponse> searchProducts(String keyword, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
-        String safeKeyword = (keyword != null) ? keyword : "";
-
-        return productRepository.searchProducts(safeKeyword, minPrice, maxPrice, pageable)
+    public Page<ProductResponse> searchProducts(String keyword, BigDecimal minPrice, BigDecimal maxPrice, String categoryName, Pageable pageable) {
+        return productRepository.searchProducts(categoryName, keyword, minPrice, maxPrice, pageable)
                                 .map(productMapper :: toResponse);
     }
 

@@ -60,9 +60,10 @@ public class ProductController {
         @RequestParam (required = false, defaultValue = "") String keyword,
         @RequestParam (required = false, defaultValue = "0.00") BigDecimal minPrice,
         @RequestParam (required = false, defaultValue = "9999999.99") BigDecimal maxPrice,
+        @RequestParam (required = false, defaultValue = "") String categoryName,
         @PageableDefault (size = 10, sort = "createdAt") Pageable pageable
     ) {
-        Page<ProductResponse> products = productService.searchProducts(keyword, minPrice, maxPrice, pageable);
+        Page<ProductResponse> products = productService.searchProducts(keyword, minPrice, maxPrice, categoryName, pageable);
         return ResponseEntity.ok(PageResponse.of(products));
     }
 

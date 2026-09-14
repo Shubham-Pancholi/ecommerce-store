@@ -1,8 +1,9 @@
-package com.ecommerce.store.entity;
+package com.ecommerce.store.dto;
 
 public record OrderPlacedEvent(
     String orderNumber,
     String userEmail,
     String firstName,
-    String totalAmount
+    String totalAmount,
+    String shippingAddress
 ) {}

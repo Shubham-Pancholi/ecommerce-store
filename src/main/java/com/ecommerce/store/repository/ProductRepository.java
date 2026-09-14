@@ -19,11 +19,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query ( 
         "SELECT p FROM Product p WHERE " + 
-        "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " + 
+        "(:categoryName IS NULL OR p.category.name = :categoryName) AND " + 
+        "(:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " + 
         "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " + 
-        "p.price >= :minPrice AND p.price <= :maxPrice" 
+        "(:minPrice IS NULL OR p.price >= :minPrice) AND" + 
+        "(:maxPrice IS NULL OR p.price <= :maxPrice)"
     )
     Page<Product> searchProducts(
+        @Param ("categoryName") String categoryName,
         @Param ("keyword") String keyword,
         @Param ("minPrice") BigDecimal minPrice,
         @Param ("maxPrice") BigDecimal maxPrice,

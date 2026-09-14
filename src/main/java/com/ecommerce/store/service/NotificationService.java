@@ -6,7 +6,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import com.ecommerce.store.entity.OrderPlacedEvent;
+import com.ecommerce.store.dto.OrderPlacedEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -31,6 +31,7 @@ public class NotificationService {
                         .buildOrderConfirmation(event.orderNumber());
             
             System.out.println("Ready to send mail to: " + emailBuilder.getRecipient());
+            System.out.println("The order will be delivered at: " + event.shippingAddress());
 
             RestClient restClient = RestClient.create();
 

@@ -16,17 +16,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ecommerce.store.dto.CreateOrderRequest;
-import com.ecommerce.store.dto.OrderItemRequest;
+import com.ecommerce.store.dto.OrderPlacedEvent;
 import com.ecommerce.store.dto.OrderResponse;
 import com.ecommerce.store.entity.Order;
 import com.ecommerce.store.entity.OrderItem;
-import com.ecommerce.store.entity.OrderPlacedEvent;
 import com.ecommerce.store.entity.OrderStatus;
 import com.ecommerce.store.entity.OutboxMessage;
 import com.ecommerce.store.entity.Product;
 import com.ecommerce.store.entity.User;
 import com.ecommerce.store.exception.ResourceNotFoundException;
 import com.ecommerce.store.mapper.OrderMapper;
+import com.ecommerce.store.model.Cart;
+import com.ecommerce.store.model.CartItem;
 import com.ecommerce.store.repository.OrderRepository;
 import com.ecommerce.store.repository.OutboxMessageRepository;
 import com.ecommerce.store.repository.ProductRepository;
@@ -49,6 +50,7 @@ public class OrderService {
     private final OrderMapper orderMapper;
     private final OutboxMessageRepository outboxMessageRepository;
     private final ObjectMapper objectMapper;
+    private final CartService cartService;
 
     @Transactional 
     @Retryable (
@@ -80,15 +82,21 @@ public class OrderService {
 
             BigDecimal total = BigDecimal.ZERO;
 
-            for (OrderItemRequest itemRequest : request.items()) {
-                Product product = productRepository.findById(itemRequest.productId())
-                                                   .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + itemRequest.productId()));
+            Cart cart = cartService.getCart(userId);
 
-                if (product.getStockQuantity() < itemRequest.quantity()) {
-                    throw new IllegalArgumentException("Insufficient stock for product: " + product.getName() + ". Available: " + product.getStockQuantity() + ", Requested: " + itemRequest.quantity());
+            if (cart.getItems().isEmpty()) {
+                throw new IllegalArgumentException("Your Cart is empty. Please add products first.");
+            }
+
+            for (CartItem item : cart.getItems()) {
+                Product product = productRepository.findById(item.getProductId())
+                                                   .orElseThrow(() -> new ResourceNotFoundException("Product is discontinued"));
+
+                if (product.getStockQuantity() < item.getQuantity()) {
+                    throw new IllegalArgumentException("Insufficient stock for product: " + product.getName() + ". Available: " + product.getStockQuantity() + ", Requested: " + item.getQuantity());
                 }
 
-                product.setStockQuantity(product.getStockQuantity() - itemRequest.quantity());
+                product.setStockQuantity(product.getStockQuantity() - item.getQuantity());
 
                 if (cacheManager.getCache("product") != null) {
                     cacheManager.getCache("product").evict(product.getId());
@@ -96,15 +104,16 @@ public class OrderService {
 
                 OrderItem orderItem = OrderItem.builder()
                                                .product(product)
-                                               .quantity(itemRequest.quantity())
+                                               .quantity(item.getQuantity())
                                                .pricePerUnit(product.getPrice())
                                                .build();
 
                 order.addItem(orderItem);
 
-                BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(itemRequest.quantity()));
+                BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
                 total = total.add(itemTotal);
             }
+
             order.setTotalAmount(total);
 
             Order savedOrder = orderRepository.save(order);
@@ -113,7 +122,8 @@ public class OrderService {
                 savedOrder.getOrderNumber(),
                 user.getEmail(),
                 user.getFirstName(),
-                savedOrder.getTotalAmount().toString()
+                savedOrder.getTotalAmount().toString(),
+                request.shippingAddress()
             );
 
             String jsonPayload = objectMapper.writeValueAsString(event);
@@ -124,6 +134,8 @@ public class OrderService {
                                                        .build();
 
             outboxMessageRepository.save(outboxMessage);
+
+            cartService.clearCart(userId);
 
             return orderMapper.tOrderResponse(savedOrder);
 
