@@ -63,6 +63,9 @@ public class Order {
     @Column (name = "shipping_address", length = 1024)
     private String shippingAddress;
 
+    @Column (name = "razorpay_order_id", length = 100)
+    private String razorpayOrderId;
+
     @PrePersist 
     protected void onCreate() {
         if (this.createdAt == null) {

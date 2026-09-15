@@ -15,5 +15,6 @@ public record OrderResponse(
     BigDecimal totalAmount,
     List<OrderItemResponse> items,
     Instant createdAt,
-    String shippingAddress
+    String shippingAddress,
+    String razorpayOrderId
 ) {}

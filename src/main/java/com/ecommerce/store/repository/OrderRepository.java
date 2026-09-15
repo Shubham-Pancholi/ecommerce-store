@@ -19,4 +19,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @EntityGraph (attributePaths = {"user", "items.product"})
     Page<Order> findAll(Pageable pageable);
+
+    @EntityGraph (attributePaths = {"items.product"})
+    Optional<Order> findByRazorpayOrderId(String razorpayOrderId);
 }

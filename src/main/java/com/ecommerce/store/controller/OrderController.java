@@ -1,5 +1,7 @@
 package com.ecommerce.store.controller;
 
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ecommerce.store.dto.CreateOrderRequest;
 import com.ecommerce.store.dto.OrderResponse;
 import com.ecommerce.store.dto.PageResponse;
+import com.ecommerce.store.dto.PaymentVerificationRequest;
 import com.ecommerce.store.entity.User;
 import com.ecommerce.store.service.OrderService;
 
@@ -59,5 +62,13 @@ public class OrderController {
     ) {
         Page<OrderResponse> response = orderService.getOrderByUserId(currentUser.getId(), pageable);
         return ResponseEntity.ok(PageResponse.of(response));
+    }
+
+    @PostMapping ("/verify-payment")
+    public ResponseEntity<Map<String, String>> verifyPayment(
+        @RequestBody PaymentVerificationRequest request
+    ) {
+        orderService.verifyOrderPayment(request);
+        return ResponseEntity.ok(Map.of("message", "Payment successful; Order is placed."));
     }
 }

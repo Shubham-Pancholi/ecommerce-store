@@ -17,6 +17,7 @@
         button:hover { opacity: 0.9; }
         input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
     </style>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
 
@@ -118,16 +119,22 @@
     }
 
     // --- PRODUCTS ---
-    async function loadProducts() {
+        async function loadProducts() {
         const data = await apiCall('/api/v1/products');
         const list = document.getElementById('product-list');
         list.innerHTML = '';
         
         data.content.forEach(p => {
+            // Use the MinIO URL, or a fallback placeholder if null
+            const imageHtml = p.imageUrl 
+                ? `<img src="${p.imageUrl}" alt="${p.name}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 4px; margin-bottom: 10px;">`
+                : `<div style="width: 100%; height: 200px; background: #ddd; display: flex; align-items: center; justify-content: center; border-radius: 4px; margin-bottom: 10px; color: #666;">No Image</div>`;
+
             list.innerHTML += `
                 <div class="card">
-                    <h3>${p.name}</h3>
-                    <p>$${p.price} (Stock: ${p.stockQuantity})</p>
+                    ${imageHtml}
+                    <h3 style="margin: 0 0 10px 0;">${p.name}</h3>
+                    <p style="margin: 0 0 15px 0; color: #2c3e50; font-weight: bold;">$${p.price} <span style="font-weight: normal; font-size: 0.9em; color: #7f8c8d;">(Stock: ${p.stockQuantity})</span></p>
                     <button onclick="addToCart(${p.id})">Add to Cart</button>
                 </div>
             `;
@@ -166,11 +173,37 @@
         if (!addressId) { alert("Please enter an Address ID"); return; }
 
         try {
-            await apiCall('/api/v1/orders', 'POST', { addressId: parseInt(addressId) });
-            alert("Order placed successfully! Check your database.");
-            loadCart(); 
+            // 1. Tell backend to create the Order
+            const orderResponse = await apiCall('/api/v1/orders', 'POST', { addressId: parseInt(addressId) });
+            
+            // 2. Open Razorpay Widget
+            var options = {
+                "key": "rzp_test_TcIsrM6wemxZnL",
+                "amount": orderResponse.totalAmount * 100, 
+                "currency": "INR",
+                "name": "My E-Commerce Store",
+                "description": "Test Transaction",
+                "order_id": orderResponse.razorpayOrderId, 
+                "handler": async function (response) {
+                    // 3. Razorpay returns success! Send signature to backend to verify.
+                    try {
+                        await apiCall('/api/v1/orders/verify-payment', 'POST', {
+                            razorpayOrderId: response.razorpay_order_id,
+                            razorpayPaymentId: response.razorpay_payment_id,
+                            razorpaySignature: response.razorpay_signature
+                        });
+                        alert("Payment verified securely! Order is now PAID.");
+                        loadCart(); 
+                    } catch(err) {
+                        alert("Payment failed verification!");
+                    }
+                },
+                "theme": { "color": "#27ae60" }
+            };
+            var rzp1 = new Razorpay(options);
+            rzp1.open();
+
         } catch (e) {
-            // Now this will actually display the exception thrown by Spring Boot!
             alert("Checkout failed: " + e.message);
         }
     }
