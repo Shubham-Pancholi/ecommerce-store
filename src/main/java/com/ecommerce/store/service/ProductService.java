@@ -39,7 +39,7 @@ public class ProductService {
     }
 
     public Page<ProductResponse> getAllProducts(Pageable pageable) {
-        return productRepository.findAll( pageable )
+        return productRepository.findByStatus("ACTIVE", pageable)
               .map(productMapper :: toResponse);
     }
 

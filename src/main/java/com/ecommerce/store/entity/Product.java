@@ -3,8 +3,6 @@ package com.ecommerce.store.entity;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-import org.hibernate.annotations.SQLRestriction;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -29,7 +27,6 @@ import lombok.Setter;
 @AllArgsConstructor 
 @NoArgsConstructor 
 @Builder 
-@SQLRestriction ("status <> 'DELETED'")
 public class Product {
     
     @Id 

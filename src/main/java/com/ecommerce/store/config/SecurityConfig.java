@@ -35,6 +35,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth.requestMatchers("/api/v1/auth/**", "/actuator/**", "/error").permitAll()
                                                .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                                                .requestMatchers(HttpMethod.GET, "/api/v1/categories").permitAll()
+                                               .requestMatchers("/", "/index.html", "/favicon.ico").permitAll()
                                                .requestMatchers(HttpMethod.POST, "/api/v1/products/*/reviews").authenticated()
                                                .requestMatchers("/api/v1/products/**").hasAuthority("ROLE_ADMIN")
                                                .requestMatchers(HttpMethod.GET, "/api/v1/orders").hasAuthority("ROLE_ADMIN")

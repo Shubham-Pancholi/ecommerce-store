@@ -62,6 +62,18 @@ public class CartService {
         return cart;
     }
 
+    public Cart removeItemFromCart(Long userId, Long productId) {
+        Cart cart = getCart(userId);
+
+        cart.getItems().removeIf(item -> item.getProductId().equals(productId));
+
+        cart.recalculation();
+
+        cartRedisTemplate.opsForValue().set(CART_PREFIX + userId, cart, Expiration.from(7, TimeUnit.DAYS));
+
+        return cart;
+    }
+
     public void clearCart(Long userId) {
         cartRedisTemplate.delete(CART_PREFIX + userId);
     }

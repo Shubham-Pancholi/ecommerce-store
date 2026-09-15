@@ -17,8 +17,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsBySku(String sku);
 
+    Page<Product> findByStatus(String status, Pageable pageable);
+
     @Query ( 
-        "SELECT p FROM Product p WHERE " + 
+        "SELECT p FROM Product p WHERE p.status = 'ACTIVE' AND " + 
         "(:categoryName IS NULL OR p.category.name = :categoryName) AND " + 
         "(:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " + 
         "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " + 

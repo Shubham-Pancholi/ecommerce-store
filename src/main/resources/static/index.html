@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Store</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        .nav { display: flex; justify-content: space-between; background: #2c3e50; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .nav button { background: #e74c3c; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; }
+        .nav button.cart-btn { background: #27ae60; }
+        .hidden { display: none; }
+        .card { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        button { background: #3498db; color: white; border: none; padding: 10px; cursor: pointer; border-radius: 4px; width: 100%; }
+        button:hover { opacity: 0.9; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- NAVIGATION -->
+    <div id="nav" class="nav hidden">
+        <h2 style="margin: 0;">My Store</h2>
+        <div>
+            <button class="cart-btn" onclick="showView('cart-view'); loadCart();">🛒 Cart</button>
+            <button onclick="showView('store-view'); loadProducts();">🏠 Store</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- LOGIN VIEW -->
+    <div id="login-view" class="card">
+        <h2>Login</h2>
+        <input type="email" id="email" placeholder="Email (e.g. test@test.com)">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+
+    <!-- STORE VIEW -->
+    <div id="store-view" class="hidden">
+        <h2>Available Products</h2>
+        <div id="product-list" class="product-grid"></div>
+    </div>
+
+    <!-- CART VIEW -->
+    <div id="cart-view" class="hidden">
+        <h2>Your Shopping Cart</h2>
+        <div id="cart-items" class="card"></div>
+        <div class="card">
+            <h3>Checkout</h3>
+            <label>Select Address ID:</label>
+            <input type="number" id="addressId" placeholder="Address ID (e.g. 1)">
+            <button onclick="checkout()" style="background: #27ae60;">Place Order</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- CORE API WRAPPER (No more manual JWTs!) ---
+        async function apiCall(endpoint, method = 'GET', body = null) {
+        const token = localStorage.getItem('jwt');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const options = { method, headers };
+        if (body) options.body = JSON.stringify(body);
+
+        const response = await fetch(endpoint, options);
+        if (response.status === 403 || response.status === 401) {
+            logout();
+            alert("Session expired. Please login again.");
+            throw new Error("Unauthorized");
+        }
+        
+        const text = await response.text();
+        const data = text ? JSON.parse(text) : true;
+        
+        // THE FIX: If the backend returns a 400 or 500 error, throw it so the catch() block fires!
+        if (!response.ok) {
+            // Spring Boot usually puts the error message in 'message' or 'detail'
+            throw new Error(data.message || data.detail || "Request failed!"); 
+        }
+        
+        return data;
+    }
+
+    // --- VIEW ROUTER ---
+    function showView(viewId) {
+        document.getElementById('login-view').classList.add('hidden');
+        document.getElementById('store-view').classList.add('hidden');
+        document.getElementById('cart-view').classList.add('hidden');
+        document.getElementById(viewId).classList.remove('hidden');
+    }
+
+    // --- AUTHENTICATION ---
+    async function login() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+            const res = await apiCall('/api/v1/auth/login', 'POST', { email, password });
+            if (res && res.token) {
+                localStorage.setItem('jwt', res.token);
+                document.getElementById('nav').classList.remove('hidden');
+                showView('store-view');
+                loadProducts();
+            }
+        } catch (e) { alert("Login failed!"); }
+    }
+
+    function logout() {
+        localStorage.removeItem('jwt');
+        document.getElementById('nav').classList.add('hidden');
+        showView('login-view');
+    }
+
+    // --- PRODUCTS ---
+    async function loadProducts() {
+        const data = await apiCall('/api/v1/products');
+        const list = document.getElementById('product-list');
+        list.innerHTML = '';
+        
+        data.content.forEach(p => {
+            list.innerHTML += `
+                <div class="card">
+                    <h3>${p.name}</h3>
+                    <p>$${p.price} (Stock: ${p.stockQuantity})</p>
+                    <button onclick="addToCart(${p.id})">Add to Cart</button>
+                </div>
+            `;
+        });
+    }
+
+    // --- CART & CHECKOUT ---
+    async function addToCart(productId) {
+        await apiCall('/api/v1/cart/items', 'POST', { productId: productId, quantity: 1 });
+        alert("Added to cart!");
+    }
+
+    async function loadCart() {
+        const cart = await apiCall('/api/v1/cart');
+        const list = document.getElementById('cart-items');
+        list.innerHTML = '';
+        
+        if (!cart || cart.items.length === 0) {
+            list.innerHTML = '<p>Your cart is empty.</p>';
+            return;
+        }
+
+        cart.items.forEach(item => {
+            list.innerHTML += `
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 5px;">
+                    <span>${item.productName} (x${item.quantity}) - $${item.price}</span>
+                    <button onclick="removeFromCart(${item.productId})" style="width: 80px; background: #e74c3c; padding: 5px;">Remove</button>
+                </div>
+            `;
+        });
+        list.innerHTML += `<h3>Total: $${cart.totalPrice}</h3>`;
+    }
+
+    async function checkout() {
+        const addressId = document.getElementById('addressId').value;
+        if (!addressId) { alert("Please enter an Address ID"); return; }
+
+        try {
+            await apiCall('/api/v1/orders', 'POST', { addressId: parseInt(addressId) });
+            alert("Order placed successfully! Check your database.");
+            loadCart(); 
+        } catch (e) {
+            // Now this will actually display the exception thrown by Spring Boot!
+            alert("Checkout failed: " + e.message);
+        }
+    }
+
+    async function removeFromCart(productId) {
+        try {
+            await apiCall('/api/v1/cart/items/' + productId, 'DELETE');
+            loadCart(); // Instantly refresh the cart UI!
+        } catch (e) {
+            alert("Failed to remove item: " + e.message);
+        }
+    }
+
+    // --- STARTUP LOGIC ---
+    if (localStorage.getItem('jwt')) {
+        document.getElementById('nav').classList.remove('hidden');
+        showView('store-view');
+        loadProducts();
+    } else {
+        showView('login-view');
+    }
+</script>
+</body>
+</html>
