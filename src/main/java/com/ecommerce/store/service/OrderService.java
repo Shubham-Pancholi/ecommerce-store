@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ecommerce.store.dto.CreateOrderRequest;
 import com.ecommerce.store.dto.OrderPlacedEvent;
 import com.ecommerce.store.dto.OrderResponse;
+import com.ecommerce.store.entity.Address;
 import com.ecommerce.store.entity.Order;
 import com.ecommerce.store.entity.OrderItem;
 import com.ecommerce.store.entity.OrderStatus;
@@ -28,6 +29,7 @@ import com.ecommerce.store.exception.ResourceNotFoundException;
 import com.ecommerce.store.mapper.OrderMapper;
 import com.ecommerce.store.model.Cart;
 import com.ecommerce.store.model.CartItem;
+import com.ecommerce.store.repository.AddressRepository;
 import com.ecommerce.store.repository.OrderRepository;
 import com.ecommerce.store.repository.OutboxMessageRepository;
 import com.ecommerce.store.repository.ProductRepository;
@@ -51,6 +53,7 @@ public class OrderService {
     private final OutboxMessageRepository outboxMessageRepository;
     private final ObjectMapper objectMapper;
     private final CartService cartService;
+    private final AddressRepository addressRepository;
 
     @Transactional 
     @Retryable (
@@ -73,10 +76,20 @@ public class OrderService {
             User user = userRepository.findById(userId)
                                       .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
             
+            Address address = addressRepository.findById(request.addressId())
+                                               .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+
+            if (!address.getUser().getId().equals(userId)) {
+                throw new IllegalArgumentException("Address does not belong to the user");
+            }
+
+            String formattedShippingAddress = String.format("%s, %s, %s, %s, %s", address.getStreet(), address.getCity(), address.getState(), address.getZipCode(), address.getCountry());
+
             Order order = Order.builder()
                             .user(user)
                             .orderNumber("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
                             .status(OrderStatus.PENDING)
+                            .shippingAddress(formattedShippingAddress)
                             .totalAmount(BigDecimal.ZERO)
                             .build();
 
@@ -123,7 +136,7 @@ public class OrderService {
                 user.getEmail(),
                 user.getFirstName(),
                 savedOrder.getTotalAmount().toString(),
-                request.shippingAddress()
+                formattedShippingAddress
             );
 
             String jsonPayload = objectMapper.writeValueAsString(event);

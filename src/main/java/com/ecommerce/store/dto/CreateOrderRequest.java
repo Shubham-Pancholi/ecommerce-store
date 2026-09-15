@@ -1,8 +1,8 @@
 package com.ecommerce.store.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 public record CreateOrderRequest(
-    @NotBlank (message = "Address is required")
-    String shippingAddress
+    @NotNull (message = "Shipping Address is required")
+    Long addressId
 ) {}

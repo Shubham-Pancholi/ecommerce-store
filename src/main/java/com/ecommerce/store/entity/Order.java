@@ -60,6 +60,9 @@ public class Order {
     @Column (name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column (name = "shipping_address", length = 1024)
+    private String shippingAddress;
+
     @PrePersist 
     protected void onCreate() {
         if (this.createdAt == null) {
