@@ -55,12 +55,21 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrderById(id));
     }
 
-    @GetMapping ("/user")
-    public ResponseEntity<PageResponse<OrderResponse>> getOrderByUserId(
+    @GetMapping ("/user/me")
+    public ResponseEntity<PageResponse<OrderResponse>> getOrderOfUser(
         @AuthenticationPrincipal User currentUser,
         @PageableDefault (page = 0, size = 10, sort = "id") Pageable pageable
     ) {
         Page<OrderResponse> response = orderService.getOrderByUserId(currentUser.getId(), pageable);
+        return ResponseEntity.ok(PageResponse.of(response));
+    }
+
+    @GetMapping ("/user/{userId}")
+    public ResponseEntity<PageResponse<OrderResponse>> getOrderByUserId(
+        @PathVariable Long userId,
+        @PageableDefault (page = 0, size = 10, sort = "id") Pageable pageable
+    ) {
+        Page<OrderResponse> response = orderService.getOrderByUserId(userId, pageable);
         return ResponseEntity.ok(PageResponse.of(response));
     }
 

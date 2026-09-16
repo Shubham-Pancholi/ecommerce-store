@@ -63,7 +63,7 @@ public class AddressService {
         Address address = addressRepository.findById(addressId)
                                            .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + addressId));
 
-        if (user.getId() != address.getUser().getId()) {
+        if (!user.getId().equals(address.getUser().getId())) {
             throw new IllegalArgumentException("No such address associated with the user");
         }
 
@@ -90,8 +90,8 @@ public class AddressService {
         Address address = addressRepository.findById(addressId)
                                            .orElseThrow(() -> new ResourceNotFoundException("Address not found with id: " + addressId));
 
-        if (user.getId().equals(address.getUser().getId())) {
-            throw new IllegalArgumentException("No such address associated with the user");
+        if (!user.getId().equals(address.getUser().getId())) {
+            throw new IllegalArgumentException("No such address associated with the user..");
         }
 
         removeDefaultAddress(userId);
